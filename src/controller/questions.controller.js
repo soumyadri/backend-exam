@@ -58,7 +58,16 @@ router.post('/checkResult', async (req, res) => {
     }
 });
 
-router.delete('/delete/:id', async (req, res) => {
+router.post('/edit/:id', async (req, res) => {
+    if (req.params.id != "undefined" && req && req.body && req.body.question && req.body.subject && req.body.optionA && req.body.optionB && req.body.optionC && req.body.optionD && req.body.answer) {
+        const questionDetails = await Question.updateOne({"id": req.params.id}, {$set: req?.body}).lean().exec();
+        return res.status(200).json({ data: questionDetails});
+    } else {
+        return res.status(201).json({ data: "Something went wrong!"});
+    }
+});
+
+router.post('/delete/:id', async (req, res) => {
     if (req.params.id != "undefined") {
         const questionDetails = await Question.deleteOne({_id: new mongodb.ObjectID(req.params.id)}).lean().exec();
         return res.status(200).json({ data: questionDetails});
