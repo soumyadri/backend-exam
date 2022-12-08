@@ -17,7 +17,7 @@ router.post('/login', async (req, res) => {
         if(req.body && req.body.email && req.body.password) {
             const existingUser = await User.findOne({email: req.body.email});
             if(existingUser && existingUser.password === req.body.password) {
-                res.status(200).send({first_name: existingUser.first_name, last_name: existingUser.last_name, email: existingUser.email, profilePic: existingUser.profilePic || '', message: 'Account login successfully'});
+                res.status(200).send({first_name: existingUser.first_name, last_name: existingUser.last_name, email: existingUser.email, profilePic: existingUser.profilePic || '', role: existingUser.role || "student", message: 'Account login successfully'});
             } else {
                 res.status(201).send({data: 'Please check your email and password'});
             }
