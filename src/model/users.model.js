@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     profilePic: {type: String},
     age: {type: Number},
     gender: {type: String},
+    role: {type: String},
 });
 
 const User = mongoose.model('user', userSchema);
