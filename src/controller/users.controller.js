@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
@@ -8,45 +11,101 @@ app.use(express.json());
 const User = require('../model/users.model.js');
 
 router.get('/', async (req, res) => {
-    const userDetails = await User.find({}).lean();
-    res.status(200).json({data: userDetails});
+    try {
+        const userDetails = await User.find({}, { password: 0, gender: 0, __v: 0, _id: 0 }).lean();
+        res.status(200).json({ data: userDetails });
+    } catch (err) {
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
+router.get('/email', async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        const userDetails = await User.findOne({ email }, { password: 0, gender: 0, __v: 0, _id: 0 }).lean();
+        if (!userDetails) {
+            return res.status(400).send({ message: 'There is no such users' });
+        }
+
+        res.status(200).json({ data: userDetails });
+    } catch (err) {
+        res.status(500).send({ message: 'Internal server error' });
+    }
 });
 
 router.post('/login', async (req, res) => {
-    if(req && req.body) {
-        if(req.body && req.body.email && req.body.password) {
-            const existingUser = await User.findOne({email: req.body.email});
-            if(existingUser && existingUser.password === req.body.password) {
-                res.status(200).send({first_name: existingUser.first_name, last_name: existingUser.last_name, email: existingUser.email, profilePic: existingUser.profilePic || '', role: existingUser.role || "student", message: 'Account login successfully'});
-            } else {
-                res.status(201).send({data: 'Please check your email and password'});
-            }
-        } else {
-            res.status(201).send({data: 'Please check your email and password'});
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).send({ message: 'Please provide both email and password' });
         }
-    } else {
-        res.status(201).send({data: 'Invalid request'});
+
+        const existingUser = await User.findOne({ email });
+        if (!existingUser) {
+            return res.status(401).send({ message: 'Invalid email or password' });
+        }
+
+        const passwordMatch = await bcrypt.compare(password, existingUser.password);
+        if (!passwordMatch) {
+            return res.status(401).send({ message: 'Invalid email or password' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ userId: existingUser._id, email: existingUser.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        // Return token and user information
+        res.status(200).send({
+            token,
+            user: {
+                first_name: existingUser.first_name,
+                last_name: existingUser.last_name,
+                email: existingUser.email,
+                profilePic: existingUser.profilePic || '',
+                role: existingUser.role || "student",
+            },
+            message: 'Login successful'
+        });
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).send({ message: 'Internal server error' });
     }
 });
 
 router.post('/signup', async (req, res) => {
-    if(req && req.body) {
-        if(req.body && req.body.email && req.body.password && req.body.first_name && req.body.last_name) {
-            const existingUser = await User.findOne({email: req.body.email});
-            if(existingUser) {
-                return res.status(201).send({data: 'Account already exists with the same Email'});
-            }
-            const newUser = await User.create(req.body);
-            if(newUser && newUser._id) {
-                res.status(200).send({data: 'Account created successfully'});
-            } else {
-                res.status(201).send({message: 'Invalid request 1'});
-            }
-        } else {
-            res.status(201).send({message: 'Invalid request 2'});
+    try {
+        const { email, password, first_name, last_name, role, gender, age } = req.body;
+        if (!email || !password || !first_name || !last_name || !role || !gender || !age) {
+            return res.status(400).send({ message: 'Please provide all required fields' });
         }
-    } else {
-        res.status(201).send({message: 'Invalid request 3'});
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).send({ message: 'Account already exists with the same email' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create new user with hashed password
+        const newUser = await User.create({
+            email,
+            password: hashedPassword,
+            first_name,
+            last_name,
+            role,
+            gender,
+            age,
+        });
+
+        if (newUser && newUser._id) {
+            res.status(200).send({ message: 'Account created successfully' });
+        } else {
+            res.status(500).send({ message: 'Internal server error' });
+        }
+    } catch (error) {
+        console.error('Error during signup:', error);
+        res.status(500).send({ message: 'Internal server error' });
     }
 });
 
