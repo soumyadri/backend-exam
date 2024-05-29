@@ -12,22 +12,22 @@ const Question = require('../model/exam.model.js');
 
 router.get('/all', async (req, res) => {
     try {
-        if (!req.headers.authorization) {
-            return res.status(401).send({ message: 'Invalid Token' });
-        };
-        const token = req.headers.authorization.split(' ')[1];
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        // if (!req.headers.authorization) {
+        //     return res.status(401).send({ message: 'Invalid Token' });
+        // };
+        // const token = req.headers.authorization.split(' ')[1];
+        // const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-        const { userId } = decodedToken;
-        const userDetails = await User.findById(userId);
-        if (!userDetails) {
-            return res.status(401).send({ message: 'Invalid Token' });
-        };
+        // const { userId } = decodedToken;
+        // const userDetails = await User.findById(userId);
+        // if (!userDetails) {
+        //     return res.status(401).send({ message: 'Invalid Token' });
+        // };
 
-        let projection = { __v: 0, _id: 0 };
-        if (userDetails.role === 'student') {
-            projection.answer = 0;
-        }
+        let projection = { __v: 0 };
+        // if (userDetails.role === 'student') {
+        //     projection.answer = 0;
+        // }
 
         const questionDetails = await Question.find({}, projection).lean();
         res.status(200).json({ data: questionDetails });
@@ -39,24 +39,24 @@ router.get('/all', async (req, res) => {
 
 router.get('/all/:id', async (req, res) => {
     try {
-        if (!req.headers.authorization) {
-            return res.status(401).send({ message: 'Invalid Token' });
-        };
-        const token = req.headers.authorization.split(' ')[1];
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        // if (!req.headers.authorization) {
+        //     return res.status(401).send({ message: 'Invalid Token' });
+        // };
+        // const token = req.headers.authorization.split(' ')[1];
+        // const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-        const { userId } = decodedToken;
-        const userDetails = await User.findById(userId);
-        if (!userDetails) {
-            return res.status(401).send({ message: 'Invalid Token' });
-        };
+        // const { userId } = decodedToken;
+        // const userDetails = await User.findById(userId);
+        // if (!userDetails) {
+        //     return res.status(401).send({ message: 'Invalid Token' });
+        // };
 
         if (req.params.id == "javascript" || req.params.id == "html" || req.params.id == "css") {
             let projection = { __v: 0, _id: 0 };
 
-            if (userDetails.role === 'student') {
-                projection.answer = 0;
-            };
+            // if (userDetails.role === 'student') {
+            //     projection.answer = 0;
+            // };
 
             const questionDetails = await Question.find({ subject: req.params.id }).lean();
             return res.status(200).json({ data: questionDetails });
