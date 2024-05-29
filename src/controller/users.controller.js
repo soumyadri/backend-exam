@@ -38,17 +38,17 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
-            return res.status(400).send({ message: 'Please provide both email and password' });
+            return res.status(400).send({ code: 0, message: 'Please provide both email and password' });
         }
 
         const existingUser = await User.findOne({ email });
         if (!existingUser) {
-            return res.status(401).send({ message: 'Invalid email or password' });
+            return res.status(401).send({ code: 0, message: 'Invalid email or password' });
         }
 
         const passwordMatch = await bcrypt.compare(password, existingUser.password);
         if (!passwordMatch) {
-            return res.status(401).send({ message: 'Invalid email or password' });
+            return res.status(401).send({ code: 0, message: 'Invalid email or password' });
         }
 
         // Generate JWT token
@@ -57,18 +57,20 @@ router.post('/login', async (req, res) => {
         // Return token and user information
         res.status(200).send({
             token,
+            code: 1,
             user: {
                 first_name: existingUser.first_name,
                 last_name: existingUser.last_name,
                 email: existingUser.email,
-                profilePic: existingUser.profilePic || '',
+                gender: existingUser.gender,
+                age: existingUser.age,
                 role: existingUser.role || "student",
             },
             message: 'Login successful'
         });
     } catch (error) {
         console.error('Error during login:', error);
-        res.status(500).send({ message: 'Internal server error' });
+        res.status(500).send({ code: 0, message: 'Internal server error' });
     }
 });
 
@@ -76,12 +78,12 @@ router.post('/signup', async (req, res) => {
     try {
         const { email, password, first_name, last_name, role, gender, age } = req.body;
         if (!email || !password || !first_name || !last_name || !role || !gender || !age) {
-            return res.status(400).send({ message: 'Please provide all required fields' });
+            return res.status(400).send({ code: 0, message: 'Please provide all required fields' });
         }
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).send({ message: 'Account already exists with the same email' });
+            return res.status(400).send({ code: 0, message: 'Account already exists with the same email' });
         }
 
         // Hash the password
@@ -99,13 +101,13 @@ router.post('/signup', async (req, res) => {
         });
 
         if (newUser && newUser._id) {
-            res.status(200).send({ message: 'Account created successfully' });
+            res.status(200).send({ code: 1, message: 'Account created successfully' });
         } else {
-            res.status(500).send({ message: 'Internal server error' });
+            res.status(500).send({ code: 0, message: 'Internal server error' });
         }
     } catch (error) {
         console.error('Error during signup:', error);
-        res.status(500).send({ message: 'Internal server error' });
+        res.status(500).send({ code: 0, message: 'Internal server error' });
     }
 });
 
