@@ -83,19 +83,19 @@ router.post('/add', async (req, res) => {
 
 router.post('/checkResult', async (req, res) => {
     try {
-        if (req && Object.keys(req.body).length > 0) {
+        if (req && req.body?.length > 0) {
             let calculateMarks = 0;
             let questionCorrect = 0;
             let questionWrong = 0;
-            for (let key in req.body) {
-                let questionDetails = await Question.findById(key).lean().exec();
-                if (questionDetails?.answer === req.body[key]) {
+            for (var i=0; i<req.body.length; i++) {
+                let questionDetails = await Question.findById(req.body[i]._id).lean().exec();
+                if (questionDetails?.answer === req.body[i].selected?.[0]) {
                     calculateMarks += questionDetails.credits;
                     questionCorrect += 1;
                 } else {
                     questionWrong += 1;
-                }
-            }
+                };
+            };
             let status = 0;
             if (calculateMarks >= 4) {
                 status = 1;
